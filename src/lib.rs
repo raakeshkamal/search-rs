@@ -5,6 +5,8 @@
 //! while offering superior user control and preview capabilities
 
 pub mod cli;
+pub mod error;
 
 // Re-export `Cli` for use from `main`
 pub use cli::Cli;
+pub use error::{Result, SearchError};
