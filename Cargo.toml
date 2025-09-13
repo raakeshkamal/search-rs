@@ -1,0 +1,25 @@
+[package]
+name = "search-rs"
+version = "0.1.0"
+edition = "2024"
+dependencies = "Interactive search tool with TUI interface for code search using rip-grep"
+license = "MIT"
+repository = "https://github.com/raakeshkamal/search-rs"
+readme = "README.md"
+
+[[bin]]
+name = "search-rs"
+path = "src/main.rs"
+
+[dependencies]
+# TUI framework
+ratatui = "0.29"
+crossterm = "0.29"
+
+# Fast syntax highlighting
+syntect = "5.0"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
