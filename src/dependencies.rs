@@ -38,19 +38,22 @@ impl Dependencies {
     pub fn missing_tools(&self) -> Vec<String> {
         let mut missing = Vec::new();
         if !self.ripgrep {
-            missing.push(get_ripgrep_install_instructions());
+            missing.push("ripgrep (rg)".to_string());
         }
         missing
     }
 
     /// Get installation instructions.
     pub fn install_instructions(&self) -> String {
-        let mut install = String::new();
+        let mut install = Vec::new();
         if !self.ripgrep {
-            install.push_str("Install ripgrep (rg) with your package manager or by running:\n");
-            install.push_str("cargo install ripgrep\n");
+            install.push(get_ripgrep_install_instructions());
         }
-        install
+        
+        if install.is_empty() {
+            return "All required tools are installed.".to_string();
+        }
+        format!("Install missing tools:\n{}", install.join("\n"))
     }
 }
 
@@ -66,4 +69,47 @@ fn get_ripgrep_install_instructions() -> String {
           Install ripgrep (rg) with your package manager or by running:\n\
           cargo install ripgrep\n"
     )
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    
+    #[test]
+    fn test_check_tool() {
+        // Just check if Command function panics. This depends on OS
+        let _ = check_tool("ls");
+        let _ = check_tool("nonexistent_tool_12345");
+    }
+    
+    #[test]
+    fn test_missing_tools() {
+        let deps = Dependencies {
+            ripgrep: false,
+        };
+        assert!(!deps.all_present());
+        let missing = deps.missing_tools();
+        assert!(missing.iter().any(|tool| tool.contains("ripgrep")));
+        
+    }
+
+    #[test]
+    fn test_install_instructions() {
+        let deps = Dependencies {
+            ripgrep: false,
+        };
+        let hints = deps.install_instructions();
+        assert!(hints.contains("ripgrep"));
+        assert!(hints.contains("cargo install"));
+    }
+    
+    #[test]
+    fn test_all_present() {
+        let deps = Dependencies {
+            ripgrep: true,
+        };
+        assert!(deps.all_present());
+        let hints = deps.install_instructions();
+        assert!(hints.contains("All required tools are installed."));
+    }
 }
