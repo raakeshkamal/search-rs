@@ -22,4 +22,7 @@ pub enum SearchError {
     
     /// Input validation error.
     InvalidInput(String),
+    
+    /// File access error.
+    FileAccessError{path: String, reason: String},
 }

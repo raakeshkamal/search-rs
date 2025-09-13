@@ -6,9 +6,12 @@
 
 pub mod cli;
 pub mod dependencies;
+pub mod logging;
 pub mod error;
 
 // Re-export `Cli` for use from `main`
 pub use cli::Cli;
 pub use dependencies::Dependencies;
 pub use error::{Result, SearchError};
+pub use logging::init_debug_logging;
+
