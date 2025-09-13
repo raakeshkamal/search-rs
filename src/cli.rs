@@ -89,7 +89,7 @@ impl Cli {
         }
         
         // Validate search pattern is not empty
-        if self.pattern.is_empty() {
+        if self.pattern.trim().is_empty() {
             eprintln!("Error: Search pattern cannot be empty");
             return false;
         }
@@ -98,12 +98,12 @@ impl Cli {
     }
     
     /// Get the search mode
-    pub fn search_mode(&self) -> String {
+    pub fn search_mode(&self) -> SearchMode {
         match (self.exact, self.ignore_case, self.substring) {
-            (true, false, false) => "exact".to_string(),
-            (false, true, false) => "ignore_case".to_string(),
-            (false, false, true) => "substring".to_string(),
-            _ => "exact".to_string(),
+            (true, false, false) => SearchMode::Exact,
+            (false, true, false) => SearchMode::IgnoreCase,
+            (false, false, true) => SearchMode::Substring,
+            _ => SearchMode::Exact,
         }
     }
     
@@ -114,4 +114,157 @@ impl Cli {
             None => ".".to_string(),
         }
     }
+}
+
+/// Search modes supported by the application
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SearchMode {
+    Exact,
+    IgnoreCase,
+    Substring,
+}
+
+impl SearchMode {
+    /// Get the search mode as a string
+    pub fn name(&self) -> &'static str {
+        match self {
+            SearchMode::Exact => "exact",
+            SearchMode::IgnoreCase => "ignore_case",
+            SearchMode::Substring => "substring",
+        }
+    }
+    
+    /// Get the search mode description
+    pub fn description(&self) -> &'static str {
+        match self {
+            SearchMode::Exact => "Exact whole word matches (case sensitive)",
+            SearchMode::IgnoreCase => "Case insensitive search (default)",
+            SearchMode::Substring => "Substring search (case sensitive)",
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    // import everything from above
+    use super::*;
+
+    fn create_test_cli(
+        pattern: &str,
+        exact: bool,
+        ignore_case: bool,
+        substring: bool,
+        directory: Option<PathBuf>,
+    ) -> Cli {
+        Cli {
+            pattern: pattern.to_string(),
+            exact,
+            ignore_case,
+            substring,
+            directory,
+            debug: false,
+        }
+    }
+    
+    #[test]
+    fn test_signle_mode_validation() {
+        // Single modes should be valid
+        let cli = create_test_cli("search pattern", true, false, false, None);
+        assert!(cli.validate());
+        
+        let cli = create_test_cli("search pattern", false, true, false, None);
+        assert!(cli.validate());
+        
+        let cli = create_test_cli("search pattern", false, false, true, None);
+        assert!(cli.validate());
+        
+        // Nothing is specified
+        let cli = create_test_cli("search pattern", false, false, false, None);
+        assert!(cli.validate());
+    }
+    
+    #[test]
+    fn test_multiple_mode_is_invalid() {
+        // Multiple modes should not be valid
+        let cli = create_test_cli("search pattern", true, true, true, None);
+        assert!(!cli.validate());
+        
+        let cli = create_test_cli("search pattern", true, true, false, None);
+        assert!(!cli.validate());
+        
+        let cli = create_test_cli("search pattern", true, false, true, None);
+        assert!(!cli.validate());
+    }
+    
+    #[test]
+    fn test_empty_search_pattern_is_invalid() {
+        // Empty search pattern should not be valid
+        let cli = create_test_cli("", true, false, false, None);
+        assert!(!cli.validate());
+        
+        let cli = create_test_cli(" ", true, false, false, None);
+        assert!(!cli.validate());
+        
+        let cli = create_test_cli("\t\n", true, false, false, None);
+        assert!(!cli.validate());
+    }
+    
+    #[test]
+    fn test_valid_pattern() {
+        // Valid search pattern should be valid
+        let cli = create_test_cli("search pattern", true, false, false, None);
+        assert!(cli.validate());
+    }
+    
+    #[test]
+    fn test_get_search_mode() {
+        // Exact mode
+        let cli = create_test_cli("search pattern", true, false, false, None);
+        assert_eq!(cli.search_mode(), SearchMode::Exact);
+        
+        // Ignore case mode
+        let cli = create_test_cli("search pattern", false, true, false, None);
+        assert_eq!(cli.search_mode(), SearchMode::IgnoreCase);
+        
+        // Substring mode
+        let cli = create_test_cli("search pattern", false, false, true, None);
+        assert_eq!(cli.search_mode(), SearchMode::Substring);
+    }
+    
+    #[test]
+    fn test_searh_dir() {
+        // Default directory
+        let cli = create_test_cli("search pattern", false, false, false, None);
+        assert_eq!(cli.search_dir(), ".");
+        
+        // Custom directory
+        let cli = create_test_cli("search pattern", false, false, false, Some(PathBuf::from("/path/to/dir")));
+        assert_eq!(cli.search_dir(), "/path/to/dir");
+    }
+    
+    #[test]
+    fn test_search_mode_name_and_description() {
+        // Exact mode
+        let cli = create_test_cli("search pattern", true, false, false, None);
+        assert_eq!(cli.search_mode().name(), "exact");
+        assert_eq!(cli.search_mode().description(), "Exact whole word matches (case sensitive)");
+        
+        // Ignore case mode
+        let cli = create_test_cli("search pattern", false, true, false, None);
+        assert_eq!(cli.search_mode().name(), "ignore_case");
+        assert_eq!(cli.search_mode().description(), "Case insensitive search (default)");
+        
+        // Substring mode
+        let cli = create_test_cli("search pattern", false, false, true, None);
+        assert_eq!(cli.search_mode().name(), "substring");
+        assert_eq!(cli.search_mode().description(), "Substring search (case sensitive)");
+    }
+    
+    #[test]
+    fn test_invalid_search_dir() {
+        // Invalid directory
+        let cli = create_test_cli("search pattern", false, false, false, Some(PathBuf::from("/path/to/dir/invalid")));
+        assert!(!cli.validate());
+    }
+
 }
