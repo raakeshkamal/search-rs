@@ -281,5 +281,72 @@ impl FileSorter {
         results.sort_by(|a,b| self.compare_results(a,b));
     }
     
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
     
+    fn create_test_result(file_path: &str, line_number: usize) -> SearchResult {
+        SearchResult::new {
+            file_path: file_path.to_string(),
+            line_number,
+            line_content: "test content".to_string(),
+            matched_text: "test".to_string(),
+        }
+    }
+    
+    #[test]
+    fn test_set_enabled() {
+        let mut sorter = FileSorter::new();
+        assert!(!sorter.is_enabled());
+        
+        sorter.set_enabled(false);
+        assert!(!sorter.is_enabled());
+        
+        sorter.set_enabled(true);
+        assert!(sorter.is_enabled());
+    }
+    
+    // Integration test that would work with real files
+    #[test]
+    fn test_git_line_modification_time() {
+        let mut sorter = FileSorter::new();
+        
+        // Test with this very file that should in git
+        let current_file = "src/search/sorter.rs";
+        let line_number = 10;
+        
+        // This test will only pass if were in a git repo
+        if let Some(time) = sorter.get_git_line_modification_time(current_file, line_number) {
+            // If we got a time from git, it should be acceptable
+            // not Unix epoch or in the future
+            let now = std::time::SystemTime::now();
+            let unix_epoch = std::time::SystemTime::UNIX_EPOCH;
+            
+            assert!(time > unix_epoch, "Time should be after Unix epoch");
+            assert!(time < now, "Time should be before now");
+            
+            println!("Git line history working: got timestamp for {}:{}", current_file, line_number);
+        } else {
+            println!("Git line history not available: not in git repo or file not tracked");
+        }
+    }
+    
+    #[test]
+    fn test_git_fallback_to_file_metadata() {
+        let mut sorter = FileSorter::new();
+        
+        // Create a test results for a file that exits
+        let test_result = create_test_result("src/search/sorter.rs", 1);
+        
+        // This should work whether we are in git repo or not
+        let mtime = sorter.get_modification_time(&test_result);
+        
+        // Should get a reasonable time
+        let unix_epoch = std::time::SystemTime::UNIX_EPOCH;
+        assert!(mtime > unix_epoch, "Time should be after Unix epoch");
+        
+        println!("Modification time retrival working");
+    }
 }

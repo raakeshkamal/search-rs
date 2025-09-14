@@ -15,3 +15,20 @@ pub struct SearchResult {
     pub line_content: String,
     pub matched_text: String,
 }
+
+impl SearchResult {
+    /// Creates a new search result
+    pub fn new(
+        file_path: String,
+        line_number: usize,
+        line_content: String,
+        matched_text: String,
+    ) -> Self {
+        Self {
+            file_path,
+            line_number,
+            line_content,
+            matched_text,
+        }
+    }
+}
