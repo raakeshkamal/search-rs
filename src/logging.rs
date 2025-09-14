@@ -36,7 +36,8 @@ pub fn init_debug_logging() -> crate::Result<PathBuf> {
             .filter_module("crossterm", log::LevelFilter::Warn)
             .filter_module("ratatui", log::LevelFilter::Warn)
             .target(env_logger::Target::Pipe(Box::new(log_file))) // pipe console to file
-            .format(|buf, record| { // format log message
+            .format(|buf, record| {
+                // format log message
                 writeln!(
                     buf,
                     "{} [{}] {}:{} - {}",
@@ -49,7 +50,7 @@ pub fn init_debug_logging() -> crate::Result<PathBuf> {
             })
             .init();
     });
-    
+
     // display works for path in all OSes
     info!("Debug logging initialized to: {}", log_path.display());
 
@@ -58,25 +59,25 @@ pub fn init_debug_logging() -> crate::Result<PathBuf> {
 
 /// Log a debug message if debug mode is enabled
 pub fn debug_log(msg: &str) {
-    debug!("{}",msg);
+    debug!("{}", msg);
 }
 
 /// Log an info message if debug mode is enabled
 pub fn info_log(msg: &str) {
-    info!("{}",msg);
+    info!("{}", msg);
 }
 
 /// Log a warning message if debug mode is enabled
 pub fn warn_log(msg: &str) {
-    warn!("{}",msg);
+    warn!("{}", msg);
 }
 
 /// Log an error message if debug mode is enabled
 pub fn error_log(msg: &str) {
-    error!("{}",msg);
+    error!("{}", msg);
 }
 
 /// Log a trace message if debug mode is enabled
 pub fn trace_log(msg: &str) {
-    trace!("{}",msg);
+    trace!("{}", msg);
 }
