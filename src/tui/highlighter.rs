@@ -162,3 +162,138 @@ impl SyntaxHighlighter {
         path.split('.').last()
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::Instant;
+    
+    #[test]
+    fn test_sytanx_highlighter_caching() {
+        let mut highlighter = SyntaxHighlighter::new();
+        
+        // Test that repeated calls with same extension are cached
+        let line = "fn main() {\n    println!(\"Hello, world!\");\n}";
+        
+        // First call - cache miss
+        let start = Instant::now();
+        let _ = highlighter.highlight_text(line, Some("rs"));
+        let first_time = start.elapsed();
+    
+        // Second call - cache hit
+        let start = Instant::now();
+        let _ = highlighter.highlight_text(line, Some("rs"));
+        let second_time = start.elapsed();
+        
+        // Cache lookup should be faster than syntax set lookup
+        // Were mainly testing that it doesn't panic
+        assert!(first_time.as_nanos() > 0);
+        assert!(second_time.as_nanos() > 0);
+        
+        // Verify that cache is working
+        assert!(highlighter.syntax_cache.contains_key("rs"));
+    }
+    
+    #[test]
+    fn test_sytanx_highlighter_different_extensions() {
+        let mut highlighter = SyntaxHighlighter::new();
+        
+        // Test different extensions are cached separately
+        let rust_line = "fn main() {\n    println!(\"Hello, world!\");\n}";
+        let js_line = "console.log(\"Hello, world!\");";
+        let py_line = "print(\"Hello, world!\")";
+        
+        let _ = highlighter.highlight_text(rust_line, Some("rs"));
+        let _ = highlighter.highlight_text(js_line, Some("js"));
+        let _ = highlighter.highlight_text(py_line, Some("py"));
+        
+        // All extensions should be cached
+        assert!(highlighter.syntax_cache.contains_key("rs"));
+        assert!(highlighter.syntax_cache.contains_key("js"));
+        assert!(highlighter.syntax_cache.contains_key("py"));
+        
+        // Cache should have 3 entries
+        assert_eq!(highlighter.syntax_cache.len(), 3);
+    }
+    
+    #[test]
+    fn test_sytanx_highlighter_unknown_extension() {
+        let mut highlighter = SyntaxHighlighter::new();
+        
+        let line = "some text with no extension";
+        let result = highlighter.highlight_line(line, Some("unknowntext"));
+        
+        // Should return original text
+        assert_eq!(result.spans.len(), 1);
+        assert_eq!(result.spans[0].content, line);
+        
+        // Cache won't store unknown extension
+        // We only cache known extensions
+        assert!(!highlighter.syntax_cache.contains_key("unknowntext"));
+    }
+    
+    #[test]
+    fn test_global_syntax_set_initialization() {
+        // Test that global syntax set is initialized
+        let syntax_set = SyntaxHighlighter::get_syntax_set();
+        
+        // Should have common syntax definitions
+        assert!(syntax_set.find_syntax_by_extension("rs").is_some());
+        assert!(syntax_set.find_syntax_by_extension("py").is_some());
+        assert!(syntax_set.find_syntax_by_extension("js").is_some());
+        
+        // Test that multiple calls return same syntax set
+        let syntax_set_2 = SyntaxHighlighter::get_syntax_set();
+        assert!(std::ptr::eq(syntax_set, syntax_set_2));
+    }
+    
+    #[test]
+    fn test_cached_performance_with_many_extensions() {
+        let mut highlighter = SyntaxHighlighter::new();
+        
+        let extensions = ["rs", "py", "js", "java", "c", "cpp", "go", "rb", "php", "swift"];
+        let line = "test line";
+        
+        // First pass - populate cache
+        let start = Instant::now();
+        for extension in extensions {
+            let _ = highlighter.highlight_line(line, Some(extension));
+        }
+        let first_pass = start.elapsed();
+        
+        // Second pass - cache hit
+        let start = Instant::now();
+        for extension in extensions {
+            let _ = highlighter.highlight_line(line, Some(extension));
+        }
+        let second_pass = start.elapsed();
+        
+        // Cache should have most of extensions
+        assert!(highlighter.syntax_cache.len() > extensions.len() - 2);
+        
+        // functions should not panic
+        println!("First pass {:?} Second pass {:?}", first_pass, second_pass);
+        assert!(first_pass.as_nanos() > 0);
+        assert!(second_pass.as_nanos() > 0);
+    }
+    
+    #[test]
+    fn test_extract_file_extension() {
+        assert_eq!(SyntaxHighlighter::get_extension("file.rs"), Some("rs"));
+        assert_eq!(SyntaxHighlighter::get_extension("path/to/file.js"), Some("js"));
+        assert_eq!(SyntaxHighlighter::get_extension("file.tar.gz"), Some("gz"));
+        assert_eq!(SyntaxHighlighter::get_extension("file"), Some("file"));
+        assert_eq!(SyntaxHighlighter::get_extension(""), Some(""));
+        assert_eq!(SyntaxHighlighter::get_extension(".file"), Some("file"));
+    }
+    
+    #[test]
+    fn test_theme_consistency() {
+        let highlighter1 = SyntaxHighlighter::new();
+        let highlighter2 = SyntaxHighlighter::new();
+        
+        // Both highlighters should have same theme
+        assert!(std::ptr::eq(highlighter1.theme, highlighter2.theme));
+    }
+}

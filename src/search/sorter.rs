@@ -120,15 +120,16 @@ impl FileSorter {
             return *mtime;
         }
 
-        let mtime = self.get_git_line_modification_time(&result.file_path, result.line_number)
-            .unwrap_or_else(||{
+        let mtime = self
+            .get_git_line_modification_time(&result.file_path, result.line_number)
+            .unwrap_or_else(|| {
                 // Fallback to file metadata if git line history is unavailable
                 // and_then is daisy-chained only if first operation is successful the second one is executed
                 fs::metadata(&result.file_path)
                     .and_then(|metadata| metadata.modified())
                     .unwrap_or(SystemTime::UNIX_EPOCH)
             });
-        
+
         // Cache the result
         self.metadata_cache.insert(cache_key, mtime);
 
@@ -136,7 +137,11 @@ impl FileSorter {
     }
 
     /// Get git line modification time using blame
-    fn get_git_line_modification_time(&self, file_path: &str, line_number: usize) -> Option<SystemTime> {
+    fn get_git_line_modification_time(
+        &self,
+        file_path: &str,
+        line_number: usize,
+    ) -> Option<SystemTime> {
         let repo = self.git_repo.as_ref()?;
 
         // Convert absolute path to relative path within git repo
@@ -166,7 +171,7 @@ impl FileSorter {
         let timestamp = git_time.seconds();
 
         // Convert to SystemTime
-        if timestamp >=0{
+        if timestamp >= 0 {
             Some(SystemTime::UNIX_EPOCH + std::time::Duration::from_secs(timestamp as u64))
         } else {
             // Handles negative timestamps (before epoch)
@@ -174,47 +179,47 @@ impl FileSorter {
             SystemTime::UNIX_EPOCH.checked_sub(duration)
         }
     }
-    
+
     /// Add new results to the global sorted collection
     /// Retunrs only the newly added results in their correct sorted positions
     pub fn add_results(&mut self, mut new_results: Vec<SearchResult>) -> Vec<SearchResult> {
-        if(!self.enabled || new_results.is_empty()){
+        if (!self.enabled || new_results.is_empty()) {
             self.global_results.extend(new_results.clone());
             return new_results;
         }
-        
+
         // Pre-populate metadata cache for the new results
         for result in &new_results {
             self.get_modification_time(result);
         }
-        
+
         // Sort the new batch internally first
         self.sort_results(&mut new_results);
-        
+
         // If global results are empty, just add the new results
         if self.global_results.is_empty() {
             self.global_results = new_results.clone();
             return new_results;
         }
-        
+
         // Merge the sorted results with the global results
         self.merge_sorted_results(new_results.clone());
-        
+
         // Return the newly added results
         new_results
     }
-    
+
     /// Merge a sorted batch of results with the global results
     fn merge_sorted_results(&mut self, sorted_batch: Vec<SearchResult>) {
         let mut merged = Vec::with_capacity(self.global_results.len() + sorted_batch.len());
         let mut i = 0;
         let mut j = 0;
-        
+
         // Merge the two sorted batches
         while i < self.global_results.len() && j < sorted_batch.len() {
             let global_result = &self.global_results[i];
             let batch_result = &sorted_batch[j];
-            
+
             if self.compare_results(global_result, batch_result) == std::cmp::Ordering::Equal {
                 merged.push(self.global_results[i].clone());
                 i += 1;
@@ -223,7 +228,7 @@ impl FileSorter {
                 j += 1;
             }
         }
-        
+
         // Add the remaining results from either array
         while i < self.global_results.len() {
             merged.push(self.global_results[i].clone());
@@ -233,21 +238,21 @@ impl FileSorter {
             merged.push(sorted_batch[j].clone());
             j += 1;
         }
-        
+
         self.global_results = merged;
     }
-    
+
     /// Merge a sorted batch of results with the global results
     fn merge_sorted_results_mut(&mut self, sorted_batch: Vec<SearchResult>) {
         let mut merged = Vec::with_capacity(self.global_results.len() + sorted_batch.len());
         let mut i = 0;
         let mut j = 0;
-        
+
         // Merge the two sorted batches
         while i < self.global_results.len() && j < sorted_batch.len() {
             let global_result = &self.global_results[i];
             let batch_result = &sorted_batch[j];
-            
+
             if self.compare_results(global_result, batch_result) == std::cmp::Ordering::Equal {
                 merged.push(self.global_results[i].clone());
                 i += 1;
@@ -256,97 +261,99 @@ impl FileSorter {
                 j += 1;
             }
         }
-        
+
         // Add the remaining results from either array
         while i < self.global_results.len() {
             merged.push(self.global_results[i].clone());
         }
     }
-    
+
     /// Compares two search results based on sorting criteria
     fn compare_results(&self, a: &SearchResult, b: &SearchResult) -> std::cmp::Ordering {
         let cache_key_a = format!("{}:{}", a.file_path, a.line_number);
         let cache_key_b = format!("{}:{}", b.file_path, b.line_number);
-        
+
         let mtime_a = self.metadata_cache.get(&cache_key_a).unwrap();
         let mtime_b = self.metadata_cache.get(&cache_key_b).unwrap();
-        
+
         // Sort by modification time (most recently modified first)
         mtime_b.cmp(mtime_a)
     }
-    
-    
+
     /// Sorts the results
-    fn sort_results(&mut self, results: &mut [SearchResult]) { // &mut [] does not allow you to change its size
-        results.sort_by(|a,b| self.compare_results(a,b));
+    fn sort_results(&mut self, results: &mut [SearchResult]) {
+        // &mut [] does not allow you to change its size
+        results.sort_by(|a, b| self.compare_results(a, b));
     }
-    
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    
+
     fn create_test_result(file_path: &str, line_number: usize) -> SearchResult {
-        SearchResult::new {
+        SearchResult {
             file_path: file_path.to_string(),
             line_number,
             line_content: "test content".to_string(),
             matched_text: "test".to_string(),
         }
     }
-    
+
     #[test]
     fn test_set_enabled() {
         let mut sorter = FileSorter::new();
         assert!(!sorter.is_enabled());
-        
+
         sorter.set_enabled(false);
         assert!(!sorter.is_enabled());
-        
+
         sorter.set_enabled(true);
         assert!(sorter.is_enabled());
     }
-    
+
     // Integration test that would work with real files
     #[test]
     fn test_git_line_modification_time() {
         let mut sorter = FileSorter::new();
-        
+
         // Test with this very file that should in git
         let current_file = "src/search/sorter.rs";
         let line_number = 10;
-        
+
         // This test will only pass if were in a git repo
         if let Some(time) = sorter.get_git_line_modification_time(current_file, line_number) {
             // If we got a time from git, it should be acceptable
             // not Unix epoch or in the future
             let now = std::time::SystemTime::now();
             let unix_epoch = std::time::SystemTime::UNIX_EPOCH;
-            
+
             assert!(time > unix_epoch, "Time should be after Unix epoch");
             assert!(time < now, "Time should be before now");
-            
-            println!("Git line history working: got timestamp for {}:{}", current_file, line_number);
+
+            println!(
+                "Git line history working: got timestamp for {}:{}",
+                current_file, line_number
+            );
         } else {
             println!("Git line history not available: not in git repo or file not tracked");
         }
     }
-    
+
     #[test]
     fn test_git_fallback_to_file_metadata() {
         let mut sorter = FileSorter::new();
-        
+
         // Create a test results for a file that exits
         let test_result = create_test_result("src/search/sorter.rs", 1);
-        
+
         // This should work whether we are in git repo or not
         let mtime = sorter.get_modification_time(&test_result);
-        
+
         // Should get a reasonable time
         let unix_epoch = std::time::SystemTime::UNIX_EPOCH;
         assert!(mtime > unix_epoch, "Time should be after Unix epoch");
-        
+
         println!("Modification time retrival working");
     }
 }
