@@ -297,33 +297,33 @@ mod tests {
             assert!(args.contains(&"src/".to_string()));
         }
     }
-    
+
     #[test]
     fn test_search_engine_empty_file_types() {
         let cli = create_cli(false, true, false);
         let engine = SearchEngine::from_cli(&cli).unwrap();
         assert!(engine.file_types.is_empty());
-        
+
         let args = engine.generate_rg_args("pattern", Some("src/"));
         assert_file_type_args(&args, &[]);
     }
-    
+
     // Test directory handling
     #[test]
     fn test_rg_args_directory_handling() {
         let engine = create_engine(SearchEngineMode::CaseInsensitive, vec!["rs"]);
-        
+
         // Test with directory
         let args = engine.generate_rg_args("pattern", Some("src/"));
         assert!(args.contains(&"src/".to_string()));
         assert!(!args.contains(&".".to_string()));
-        
+
         // Test without directory
         let args = engine.generate_rg_args("pattern", None);
         assert!(args.contains(&".".to_string()));
         assert!(!args.contains(&"src/".to_string()));
     }
-    
+
     // Test pattern handling
     #[test]
     fn test_rg_args_pattern_handling() {
@@ -332,7 +332,7 @@ mod tests {
         assert!(args.contains(&"pattern".to_string()));
         assert_common_flags(&args);
     }
-    
+
     // Test special characters in paths
     #[test]
     fn test_special_characters_in_paths() {
@@ -343,31 +343,35 @@ mod tests {
             "path.with.dots/file.rs",
             "path_with_underscores/file.rs",
         ];
-        
+
         for dir in special_chars {
             let args = engine.generate_rg_args("pattern", Some(dir));
             assert!(args.contains(&dir.to_string()), "Failed for dir: {}", dir);
         }
     }
-    
+
     // Test Debug and Clone traits
     #[test]
     fn test_search_engine_triats() {
         let engine = create_engine(SearchEngineMode::CaseInsensitive, vec!["rs"]);
-        
+
         // Test Clone
         let cloned = engine.clone();
         assert!(matches!(cloned.mode, SearchEngineMode::CaseInsensitive));
         assert_eq!(cloned.file_types, vec!["rs"]);
-        
+
         // Test Debug
         let debug_str = format!("{:?}", engine);
         assert!(debug_str.contains("SearchEngine"));
         assert!(debug_str.contains("CaseInsensitive"));
         assert!(debug_str.contains("rs"));
-        
+
         // Test mode debug
-        for mode in vec![SearchEngineMode::Exact, SearchEngineMode::CaseInsensitive, SearchEngineMode::Substring] {
+        for mode in vec![
+            SearchEngineMode::Exact,
+            SearchEngineMode::CaseInsensitive,
+            SearchEngineMode::Substring,
+        ] {
             let debug_str = format!("{:?}", mode);
             assert!(!debug_str.is_empty());
         }

@@ -1,5 +1,6 @@
 //! UI rendering and layout module
 
+use crate::tui::highlighter::SyntaxHighlighter;
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Style},
@@ -16,4 +17,3 @@ pub struct ResultsAreaInfo {
     pub left: u16,
     pub width: u16,
 }
-
