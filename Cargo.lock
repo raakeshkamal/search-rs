@@ -1172,6 +1172,7 @@ dependencies = [
  "git2",
  "log",
  "ratatui",
+ "regex",
  "syntect",
 ]
 

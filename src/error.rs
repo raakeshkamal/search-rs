@@ -25,6 +25,9 @@ pub enum SearchError {
 
     /// Input validation error.
     InvalidInput(String),
+    
+    /// Invalid search pattern.
+    InvalidPattern{pattern: String, reason: String},
 
     /// File access error.
     FileAccessError { path: String, reason: String },
