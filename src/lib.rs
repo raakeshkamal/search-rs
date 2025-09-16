@@ -11,6 +11,7 @@ pub mod error;
 pub mod search;
 pub mod tui;
 pub mod validation;
+pub mod preview;
 pub mod constants;
 
 // Re-export `Cli` for use from `main`
@@ -22,3 +23,4 @@ pub use search::SearchEngine;
 pub use tui::{ResultsAreaInfo};
 pub use validation::InputValidator;
 pub use constants::*;
+pub use preview::PreviewHandler;
