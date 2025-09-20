@@ -24,6 +24,7 @@ syntect = "5.0"
 
 # Additional dependencies
 regex = "1.9"
+rand = "0.8"
 
 # Logging
 log = "0.4"
@@ -32,3 +33,6 @@ chrono = { version = "0.4", features = ["serde"] }
 
 # Git Integration
 git2 = "0.17"
+
+# Testing dependencies
+tempfile = "3.8"
