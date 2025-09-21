@@ -222,7 +222,7 @@ impl SyntaxHighlighter {
     }
 
     /// Extract file extension from path
-    fn get_extension(path: &str) -> Option<&str> {
+    pub fn get_extension(path: &str) -> Option<&str> {
         path.split('.').last()
     }
 }

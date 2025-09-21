@@ -292,12 +292,14 @@ mod tests {
     use super::*;
 
     fn create_test_result(file_path: &str, line_number: usize) -> SearchResult {
-        SearchResult {
-            file_path: file_path.to_string(),
+        SearchResult::new(
+            file_path.to_string(),
             line_number,
-            line_content: "test content".to_string(),
-            matched_text: "test".to_string(),
-        }
+            "test content".to_string(),
+            "test".to_string(),
+            None,
+            None,
+        )
     }
 
     #[test]
