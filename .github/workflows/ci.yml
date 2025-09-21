@@ -35,8 +35,13 @@ jobs:
         with:
           cache-on-failure: true
 
+      - name: Install nextest
+        uses: taiki-e/install-action@v2
+        with:
+          tool: nextest
+
       - name: Cargo build
         run: cargo build --locked --workspace --all-targets --verbose
 
-      - name: Cargo test
-        run: cargo test --locked --workspace --verbose
+      - name: Cargo nextest
+        run: cargo nextest run --locked --verbose
