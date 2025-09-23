@@ -17,14 +17,15 @@ ratatui = "0.29"
 crossterm = "0.29"
 
 # CLI
-clap = { version = "4.0", features = ["derive"] }
+clap = { version = "4.5", features = ["derive"] }
 
 # Fast syntax highlighting
-syntect = "5.0"
+syntect = "5.2"
 
 # Additional dependencies
-regex = "1.9"
+regex = "1.11"
 rand = "0.8"
+colored = "2.2"
 
 # Logging
 log = "0.4"
@@ -35,4 +36,4 @@ chrono = { version = "0.4", features = ["serde"] }
 git2 = "0.17"
 
 # Testing dependencies
-tempfile = "3.8"
+tempfile = "3.23"

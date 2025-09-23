@@ -183,7 +183,7 @@ impl FileSorter {
     /// Add new results to the global sorted collection
     /// Retunrs only the newly added results in their correct sorted positions
     pub fn add_results(&mut self, mut new_results: Vec<SearchResult>) -> Vec<SearchResult> {
-        if (!self.enabled || new_results.is_empty()) {
+        if !self.enabled || new_results.is_empty() {
             self.global_results.extend(new_results.clone());
             return new_results;
         }
