@@ -5,5 +5,6 @@
 pub mod highlighter;
 pub mod ui;
 pub mod app;
+pub mod events;
 
 pub use ui::ResultsAreaInfo;
